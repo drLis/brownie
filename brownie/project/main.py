@@ -366,6 +366,10 @@ def check_for_project(path: Union[Path, str] = ".") -> Optional[Path]:
     for folder in [path] + list(path.parents):
         if _get_project_config_path(folder):
             return folder
+        if next((i for i in folder.glob("contracts/**/*") if i.suffix in (".vy", ".sol")), None):
+            return folder
+        if folder.joinpath("contracts").is_dir() and folder.joinpath("tests").is_dir():
+            return folder
     return None
 
 
@@ -387,11 +391,6 @@ def new(project_path_str: str = ".", ignore_subfolder: bool = False) -> str:
     project_path.mkdir(exist_ok=True)
     _create_folders(project_path)
     _create_gitfiles(project_path)
-    if not _get_project_config_path(project_path):
-        shutil.copy(
-            BROWNIE_FOLDER.joinpath("data/brownie-config.yaml"),
-            project_path.joinpath("brownie-config.yaml"),
-        )
     _add_to_sys_path(project_path)
     return str(project_path)
 
@@ -421,10 +420,6 @@ def from_brownie_mix(
     project_path.parent.joinpath(project_name + "-mix-master").rename(project_path)
     _create_folders(project_path)
     _create_gitfiles(project_path)
-    shutil.copy(
-        BROWNIE_FOLDER.joinpath("data/brownie-config.yaml"),
-        project_path.joinpath("brownie-config.yaml"),
-    )
     _add_to_sys_path(project_path)
     return str(project_path)
 
@@ -492,8 +487,8 @@ def load(project_path: Union[Path, str, None] = None, name: Optional[str] = None
     # checks
     if project_path is None:
         project_path = check_for_project(".")
-    if not project_path or not _get_project_config_path(Path(project_path)):
-        raise ProjectNotFound("Could not find Brownie project")
+        if project_path is None:
+            raise ProjectNotFound("Could not find Brownie project")
 
     project_path = Path(project_path).resolve()
     if name is None:
