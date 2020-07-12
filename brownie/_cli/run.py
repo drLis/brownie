@@ -6,11 +6,11 @@ from brownie.exceptions import ProjectNotFound
 from brownie.test.output import _print_gas_profile
 from brownie.utils.docopt import docopt
 
-__doc__ = f"""Usage: brownie run <filename> [<function>] [options]
+__doc__ = f"""Usage: brownie run <filename> [<function> <params>...] [options]
 
 Arguments:
   <filename>              The name of the script to run
-  [<function>]            The function to call (default is main)
+  [<function> <params>...]  The function to call (default is main) and it's args.
 
 Options:
   --network [name]        Use a specific network (default {CONFIG['network']['default']})
@@ -35,6 +35,9 @@ def main():
 
     network.connect(ARGV["network"])
 
-    run(args["<filename>"], method_name=args["<function>"] or "main")
+    if: args["<function>"]:
+      run(args["<filename>"], method_name=args["<function>"], args=args["<params>"])
+    else:
+      run(args["<filename>"], method_name="main")
     if ARGV["gas"]:
         _print_gas_profile()
